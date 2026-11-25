@@ -90,17 +90,31 @@ def download_to(url, dest):
 
 
 def purge():
+    """清 jsDelivr 缓存。
+
+    注意：purge 接口对 @main 这种分支别名并不保证立刻生效（实测 fastly 节点
+    会继续返回旧内容直到 12 小时的 s-maxage 过期）。所以这里只尽力而为地多
+    试几轮，真正的兜底是"索引里引用的 APK 都还在"——见下面的保留策略。
+    """
     repo = os.environ.get('GITHUB_REPOSITORY', '')
     if not repo:
         print('· 没有 GITHUB_REPOSITORY，跳过清缓存')
         return
     for path in ('index.min.json', 'repo.json'):
         url = f'https://purge.jsdelivr.net/gh/{repo}@main/{path}'
-        try:
-            fetch(url, retries=2, timeout=30)
-            print(f'· 已清缓存 {path}')
-        except Exception as e:
-            print(f'· 清缓存失败 {path}: {e}')
+        for attempt in range(3):
+            try:
+                body = fetch(url, retries=1, timeout=30)
+                state = 'finished'
+                try:
+                    state = json.loads(body).get('status', state)
+                except Exception:
+                    pass
+                print(f'· 已清缓存 {path}（{state}，第 {attempt + 1} 轮）')
+                break
+            except Exception as e:
+                print(f'· 清缓存失败 {path} 第 {attempt + 1} 轮: {e}')
+                time.sleep(20)
 
 
 # ---------------- protobuf ----------------
