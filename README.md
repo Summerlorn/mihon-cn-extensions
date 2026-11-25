@@ -8,16 +8,23 @@
 在 Mihon 里添加这个地址（设置 → 浏览 → 扩展仓库 → 「+」）：
 
 ```
-https://fastly.jsdelivr.net/gh/Summerlorn/mihon-cn-extensions@main/index.min.json
+https://gcore.jsdelivr.net/gh/Summerlorn/mihon-cn-extensions@main/index.min.json
 ```
 
 地址必须完整以 `/index.min.json` 结尾，不要加任何参数。
 
 加完之后：
 
-- 列表里只出现这 56 个扩展，安装、图标、更新全部走 jsDelivr 的 fastly 节点，国内直连无需代理
+- 列表里只出现这 56 个扩展，安装、图标、更新全部走 jsDelivr 的 gcore 节点，国内直连无需代理
 - 其中 10 个是 18+ 站点，需要在「设置 → 浏览」里打开「显示 NSFW 内容」才会显示
 - **请把 keiyoushi 官方源关掉**，否则同一个扩展会出现两份、互相抢更新
+
+### 为什么用 gcore 节点
+
+jsDelivr 的 `fastly` 节点对 `.apk` / `.png` 会返回 301 跳到 `raw.githubusercontent.com`，
+而那个域名在国内不可靠，装扩展可能卡住。实测 `gcore.jsdelivr.net` 对索引、APK、图标
+一律 200 直出（本机 TTFB 0.8–1.4s），`testingcf.jsdelivr.net` 同样可用但略慢，
+两者都可以作为备选。
 
 ## 文件结构
 
