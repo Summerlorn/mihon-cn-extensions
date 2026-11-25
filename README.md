@@ -1,7 +1,7 @@
 # Mihon 中文扩展源（国内直连精选）
 
 给 [Mihon](https://mihon.app) / Tachiyomi 用的第三方扩展源。内容取自 keiyoushi 官方仓库，
-但只保留**在中国大陆网络下实测可直连**的 56 个中文扩展（63 个源站），需要代理才能访问的站点全部剔除。
+只保留**在中国大陆网络下实测可直连**的 56 个中文扩展，需要代理才能访问的站点全部剔除。
 
 ## 怎么用
 
@@ -22,18 +22,30 @@ https://fastly.jsdelivr.net/gh/Summerlorn/mihon-cn-extensions@main/index.min.jso
 ## 文件结构
 
 ```
-index.min.json   扩展索引（56 个扩展，裸数组格式）
+index.min.json   扩展索引（56 个扩展 / 65 个中文源站，裸数组格式）
 repo.json        源名称与签名指纹（keiyoushi 官方签名）
-apk/             56 个官方签名的扩展安装包
+sync.py          跟随上游同步的脚本（由 GitHub Actions 每天调用）
+packages.txt     收录哪些扩展（一行一个包名）
+domains.txt      哪些站点域名算国内可直连
+apk/             扩展安装包（每个包保留当前版本 + 上一个版本）
 icon/            56 个对应图标
 ```
 
 Mihon 会按 `<仓库地址>/apk/<文件名>` 和 `<仓库地址>/icon/<包名>.png` 取文件，
 所以这个目录结构不能改。
 
+## 自动同步
+
+`.github/workflows/sync.yml` 每天北京时间 11:23 拉取 keiyoushi 官方索引，
+把列入 `packages.txt` 的扩展升到最新版，连同新 APK 一起提交。
+
+注意两点：
+
+- jsDelivr 对 `@main` 有 12 小时缓存，更新后手机上最多延迟 12 小时才能看到新版本
+- 每个扩展只保留中文（`zh*`）源；英文等其它语种源会被过滤掉
+
 ## 说明
 
 - APK 全部为 keiyoushi 原包，未做任何修改，签名为 `9add655a78e96c4ec7a53ef89dccb557cb5d767489fac5e785d671a5a75d4da2`
 - 扩展的版权归各站点与 keiyoushi 原作者所有，此仓库仅做镜像与可达性筛选
-- 站点域名和我这里的网络状况都会变化，这份清单是某一时点的快照
-- jsDelivr 有约 7 天缓存，官方扩展更新后本仓库不会自动跟随
+- 站点域名和网络状况都会变化，收录与否是 2026-11-22 的实测快照
