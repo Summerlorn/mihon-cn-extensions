@@ -21,6 +21,7 @@
 import gzip
 import json
 import os
+import re
 import ssl
 import subprocess
 import sys
@@ -330,16 +331,31 @@ def main():
         print('\n（--dry-run，未写入任何文件）')
         return 0
 
-    # 删除不再被引用的 APK
+    # 清理旧 APK：每个包只保留"当前版本 + 上一个版本"。
+    # 保留上一个版本是有意为之——jsDelivr 对 @main 有 12 小时缓存，
+    # 期间手机端读到的仍是旧索引，旧索引指向的就是上一个版本的文件名。
+    # 若立刻删掉，这段时间里装/更新这些扩展会 404。
     keep = {e['apk'] for e in new_index}
     removed = 0
     if os.path.isdir(APK_DIR):
+        groups = {}
         for f in os.listdir(APK_DIR):
-            if f.endswith('.apk') and f not in keep:
+            if not f.endswith('.apk'):
+                continue
+            m = re.match(r'^(.*)-v(\d+(?:\.\d+)*)\.apk$', f)
+            if not m:                      # 认不出格式的，一律不动
+                continue
+            key, ver = m.group(1), tuple(int(x) for x in m.group(2).split('.'))
+            groups.setdefault(key, []).append((ver, f))
+        for key, items in groups.items():
+            items.sort(reverse=True)       # 版本号从大到小
+            referenced = [f for _, f in items if f in keep]
+            spare = [f for _, f in items if f not in keep]
+            for f in spare[1:]:            # 未被引用的，只留最新的一个
                 os.remove(os.path.join(APK_DIR, f))
                 removed += 1
     if removed:
-        print(f'  清理被替换的旧 APK: {removed} 个')
+        print(f'  清理过旧的 APK: {removed} 个（每个包保留当前版本 + 上一个版本）')
 
     old_text = open(INDEX, encoding='utf-8').read() if os.path.exists(INDEX) else ''
     new_text = json.dumps(new_index, ensure_ascii=False, indent=1)
